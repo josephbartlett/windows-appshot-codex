@@ -1,6 +1,6 @@
 {
   "name": "windows-appshot",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Capture foreground Windows app context for Codex CLI as a screenshot and UI Automation text bundle.",
   "author": {
     "name": "Joey Bartlett"

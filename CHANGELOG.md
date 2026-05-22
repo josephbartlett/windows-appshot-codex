@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.1 - 2026-05-22
 
 - Rework user-facing documentation and plugin metadata to lead with `$windows-appshot` plugin commands before direct PowerShell script usage.
 

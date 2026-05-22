@@ -217,7 +217,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-AppshotHotke
 
 ## Version
 
-Current release: `v0.2.0`
+Current release: `v0.2.1`
 
 This project uses semantic versioning.
 
