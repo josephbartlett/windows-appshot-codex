@@ -1,0 +1,36 @@
+{
+  "name": "windows-appshot",
+  "version": "0.1.0",
+  "description": "Capture foreground Windows app context for Codex CLI as a screenshot and UI Automation text bundle.",
+  "author": {
+    "name": "Joey Bartlett"
+  },
+  "homepage": "https://github.com/josephbartlett/windows-appshot-codex",
+  "repository": "https://github.com/josephbartlett/windows-appshot-codex",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "windows",
+    "appshot",
+    "screenshot",
+    "ui-automation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Windows Appshot",
+    "shortDescription": "Capture Windows app context for Codex CLI.",
+    "longDescription": "Windows Appshot provides PowerShell helpers and a Codex skill for capturing the foreground Windows window as a screenshot plus available UI Automation text, then handing that bundle to Codex through supported CLI image and file inputs.",
+    "developerName": "Joey Bartlett",
+    "category": "Productivity",
+    "capabilities": [
+      "Local capture",
+      "Image input",
+      "Windows UI Automation"
+    ],
+    "defaultPrompt": [
+      "Create a Windows appshot.",
+      "Use my latest appshot as context.",
+      "Start the appshot hotkey listener."
+    ]
+  }
+}
