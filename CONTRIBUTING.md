@@ -28,7 +28,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-AppshotHotke
 - Generated `appshots/` bundles can contain screenshots and UI Automation text from private apps.
 - Do not commit generated captures, logs, local credentials, or private Codex state.
 - Keep `NewThread` as the default command target unless there is a strong reason to change it.
-- Do not remove bounded UI Automation traversal, password filtering, or off-screen filtering without replacing them with equivalent protections.
+- Do not remove bounded UI Automation traversal, editable text filtering, password filtering, or off-screen filtering without replacing them with equivalent protections.
 
 ## Versioning
 

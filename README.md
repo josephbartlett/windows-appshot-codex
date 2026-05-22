@@ -5,7 +5,7 @@ Windows Appshot is a local Codex plugin for capturing foreground Windows app con
 It creates a local bundle with:
 
 - `window.png` - foreground-window screenshot
-- `window-text.txt` - visible, non-password Windows UI Automation text
+- `window-text.txt` - conservative UI Automation control names plus non-editable values
 - `metadata.json` - source app, title, process, bounds, capture time, and file paths
 - `prompt.md` - Codex handling notes for the captured context
 
@@ -32,6 +32,45 @@ By default the copied command starts a new interactive Codex CLI session:
 ```powershell
 codex -i '...\window.png' 'Use this Windows appshot bundle...'
 ```
+
+## Capture A Specific Window Or Tab
+
+Pass a query to search visible top-level windows by process, title, and class name. Browser tab names from Edge, Chrome, Firefox, and Brave are also inspected through UI Automation when available.
+
+```powershell
+.\scripts\New-Appshot.ps1 Edge Gmail
+.\scripts\New-Appshot.ps1 "Roblox Studio"
+.\scripts\New-Appshot.ps1 -WindowQuery "Slack OpenAI"
+```
+
+The script prints matched targets before capture. It asks for confirmation when there are multiple matches, when the best match is a browser tab, or when confidence is low. Browser tab capture may activate the matched tab, so tab matches are never silently activated unless you explicitly pass `-NoWindowConfirmation`.
+
+Before taking the screenshot, query mode verifies that the selected window is foreground. Browser tab captures also verify the selected tab through UI Automation when available or through a stronger active-title match.
+
+For inspection without capture:
+
+```powershell
+.\scripts\New-Appshot.ps1 -ListWindows
+.\scripts\New-Appshot.ps1 Edge Gmail -ListWindows
+```
+
+Listing matches prints visible window titles and available browser tab names to the terminal.
+
+For non-interactive tests or trusted automation, first list matches and then select an index:
+
+```powershell
+.\scripts\New-Appshot.ps1 "Appshot Test Window" -ListWindows
+.\scripts\New-Appshot.ps1 "Appshot Test Window" -TargetIndex 1 -NoClipboard
+```
+
+For browser tab targets, `-TargetIndex` still requires explicit trusted automation:
+
+```powershell
+.\scripts\New-Appshot.ps1 Edge Gmail -ListWindows
+.\scripts\New-Appshot.ps1 Edge Gmail -TargetIndex 1 -NoWindowConfirmation
+```
+
+Use `-NoWindowConfirmation` only when the selected target is intentionally trusted.
 
 ## Command Targets
 
@@ -67,6 +106,12 @@ Choose another hotkey:
 .\scripts\Start-AppshotHotkey.ps1 -Hotkey "Ctrl+Shift+F12"
 ```
 
+Start a hotkey listener that always targets a query:
+
+```powershell
+.\scripts\Start-AppshotHotkey.ps1 -WindowQuery "Edge Gmail"
+```
+
 ## Codex Plugin Layout
 
 This repository is the plugin root:
@@ -82,6 +127,7 @@ After installing as a Codex plugin and starting a new Codex session, invoke:
 
 ```text
 $windows-appshot create a Windows appshot
+$windows-appshot capture Edge Gmail tab
 ```
 
 ## Install As A Personal Plugin
@@ -127,7 +173,7 @@ Restart Codex sessions after installation so the skill is loaded.
 
 ## Privacy Notes
 
-Screenshots and UI Automation text can include sensitive app content. The helper skips off-screen and password controls, writes local files only, and does not edit Codex session files directly. Review generated bundles before sharing them outside your machine.
+Screenshots, window titles, browser tab names, and UI Automation text can include sensitive app content. The helper skips off-screen, editable, password, and generic `Pane` text, does not extract aggregate `TextPattern` document text, writes local files only, and does not edit Codex session files directly. Review generated bundles before sharing them outside your machine.
 
 Generated captures are ignored by git through `.gitignore`.
 
@@ -159,7 +205,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-AppshotHotke
 
 ## Version
 
-Current release: `v0.1.0`
+Current release: `v0.2.0`
 
 This project uses semantic versioning.
 

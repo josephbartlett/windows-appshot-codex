@@ -2,9 +2,13 @@
 param(
     [string]$Hotkey = "Ctrl+Alt+Space",
     [string]$OutDir = (Join-Path (Get-Location) "appshots"),
+    [Alias("WindowQuery")]
+    [string]$Query = "",
     [ValidateSet("None", "NewThread", "Exec", "ResumeLastExec")]
     [string]$CommandTarget = "NewThread",
     [int]$DelayMilliseconds = 150,
+    [switch]$NoWindowConfirmation,
+    [int]$MaxWindowMatches = 10,
     [switch]$ValidateOnly
 )
 
@@ -128,7 +132,22 @@ try {
 
         if ($msg.message -eq 0x0312 -and $msg.wParam.ToUInt32() -eq $hotkeyId) {
             try {
-                & $captureScript -OutDir $OutDir -DelayMilliseconds $DelayMilliseconds -CommandTarget $CommandTarget
+                $captureArgs = @{
+                    OutDir = $OutDir
+                    DelayMilliseconds = $DelayMilliseconds
+                    CommandTarget = $CommandTarget
+                    MaxWindowMatches = $MaxWindowMatches
+                }
+
+                if (-not [string]::IsNullOrWhiteSpace($Query)) {
+                    $captureArgs.Query = @($Query)
+                }
+
+                if ($NoWindowConfirmation) {
+                    $captureArgs.NoWindowConfirmation = $true
+                }
+
+                & $captureScript @captureArgs
             }
             catch {
                 Write-Warning "Appshot capture failed: $($_.Exception.Message)"

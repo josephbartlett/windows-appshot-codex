@@ -24,6 +24,25 @@ The user has a short delay to focus the target app window. For hotkey capture, u
 Resolve `<plugin-root>` as two directories above this `SKILL.md` file:
 `skills/windows-appshot/SKILL.md` -> plugin root -> `scripts/`.
 
+If the user includes a target query, pass it positionally:
+
+```powershell
+& "<plugin-root>\scripts\New-Appshot.ps1" Edge Gmail tab
+```
+
+Query mode searches visible windows by process, title, and class name. It also inspects browser tab names from Edge, Chrome, Firefox, and Brave when available. Let the script ask for confirmation when matches are ambiguous or when a browser tab would be activated. Use `-NoWindowConfirmation` only for tests or trusted automation where the target is intentionally preselected.
+
+Query captures verify the selected window is foreground before screenshot capture. Browser tab captures also verify selected-tab state through UI Automation when available or a strong active-title match.
+
+For non-interactive Codex execution, prefer listing matches first and then selecting an explicit index:
+
+```powershell
+& "<plugin-root>\scripts\New-Appshot.ps1" Edge Gmail tab -ListWindows
+& "<plugin-root>\scripts\New-Appshot.ps1" Edge Gmail tab -TargetIndex 1 -NoWindowConfirmation
+```
+
+For regular window matches, `-TargetIndex` is an explicit selection after listing. For browser tab matches, it still requires `-NoWindowConfirmation` because tab activation can change app state.
+
 Do not edit Codex session files directly. Use supported Codex inputs such as `--image`, `codex exec resume --last --image`, or explicit file references to the generated bundle.
 The default command target is `NewThread`; `ResumeLastExec` must be explicit because it can send captured context to the wrong latest exec session.
 
@@ -39,7 +58,8 @@ For a generated bundle:
 
 ## Quality Rules
 
-- Treat UI Automation output as partial; some Windows apps expose little text. The helper skips off-screen and password controls.
+- Treat UI Automation output as partial; some Windows apps expose little text. The helper skips off-screen, editable, password, and generic `Pane` text, and does not extract aggregate `TextPattern` document text.
+- Never silently accept an ambiguous query match. Let the script prompt, ask the user for a narrower query, or use `-TargetIndex` only after a prior listing. Browser tab `-TargetIndex` use also requires `-NoWindowConfirmation`.
 - Do not assume hidden or off-screen state unless it appears in `window-text.txt` or the user confirms it.
 - If the task needs a different window, a scrolled region, or a modal state, ask for another appshot.
 - Preserve privacy: do not repeat sensitive captured text unless it is necessary for the task.
