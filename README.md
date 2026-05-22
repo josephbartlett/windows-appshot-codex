@@ -17,7 +17,28 @@ This is not native Codex Appshots integration. It cannot inject a new appshot in
 - PowerShell
 - Codex CLI
 
-## Install As A Personal Plugin
+## Install Or Update
+
+Clone this repository, inspect the installer, then run it from PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\plugins" | Out-Null
+git clone https://github.com/josephbartlett/windows-appshot-codex.git "$HOME\plugins\windows-appshot"
+Get-Content "$HOME\plugins\windows-appshot\scripts\Install-WindowsAppshotPlugin.ps1"
+& "$HOME\plugins\windows-appshot\scripts\Install-WindowsAppshotPlugin.ps1"
+```
+
+The installer clones or updates the plugin at `$HOME\plugins\windows-appshot`, creates or updates the personal marketplace entry at `$HOME\.agents\plugins\marketplace.json`, and runs `codex plugin add windows-appshot@personal` when Codex CLI is available.
+
+From an existing clone, run:
+
+```powershell
+.\scripts\Install-WindowsAppshotPlugin.ps1
+```
+
+Restart Codex sessions after installation so the skill is loaded.
+
+### Manual Install
 
 Clone this repository into your personal plugin folder:
 
@@ -174,6 +195,84 @@ Start a hotkey listener that always targets a query:
 .\scripts\Start-AppshotHotkey.ps1 -WindowQuery "Edge Gmail"
 ```
 
+## Troubleshooting
+
+`$windows-appshot` is not available:
+
+- Restart the Codex session after installing the plugin.
+- Run `.\scripts\Install-WindowsAppshotPlugin.ps1` again to update the checkout and marketplace entry.
+- Confirm the personal marketplace entry points to `./plugins/windows-appshot`.
+
+Installer reports malformed marketplace JSON:
+
+- Back up `$HOME\.agents\plugins\marketplace.json`.
+- Repair the JSON manually, or rename the file and rerun the installer to create a fresh personal marketplace.
+- The installer writes through a temporary file and keeps `marketplace.json.bak` when replacing an existing marketplace.
+
+Installer reports permission denied or read-only files:
+
+- Run from a terminal that can write to `$HOME\plugins` and `$HOME\.agents\plugins`.
+- Avoid mixing elevated and non-elevated terminals for the same install path.
+- Use writable alternate paths when needed:
+
+```powershell
+.\scripts\Install-WindowsAppshotPlugin.ps1 -PluginsRoot "$env:TEMP\codex-plugins" -MarketplacePath "$env:TEMP\codex-marketplace\marketplace.json"
+```
+
+PowerShell reports that running scripts is disabled:
+
+- Inspect the script first, then run it with a process-scoped execution policy bypass:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File "$HOME\plugins\windows-appshot\scripts\Install-WindowsAppshotPlugin.ps1"
+```
+
+- If the file is blocked because it came from the internet, use `Unblock-File` only after reviewing the script:
+
+```powershell
+Unblock-File "$HOME\plugins\windows-appshot\scripts\Install-WindowsAppshotPlugin.ps1"
+```
+
+Installer reports a dirty plugin checkout:
+
+- Commit, stash, or revert local edits in `$HOME\plugins\windows-appshot`, then rerun.
+- Use `-AllowDirty` only for a deliberate development checkout.
+
+Installer reports a detached checkout or missing upstream:
+
+- Return the plugin checkout to a normal branch and update it:
+
+```powershell
+Set-Location "$HOME\plugins\windows-appshot"
+git switch main
+git pull --ff-only
+```
+
+- If the checkout was manually edited or moved, reclone the plugin instead. Use `-NoPull` only for deliberate local-source testing.
+
+No window or tab matches the query:
+
+- Use a broader query first, then inspect matches with `.\scripts\New-Appshot.ps1 <query> -ListWindows`.
+- Browser tab names depend on what the browser exposes through UI Automation.
+- Some apps expose little or no UI Automation text; the screenshot remains the visual source of truth.
+
+Browser tab capture asks for confirmation:
+
+- This is intentional. Activating a browser tab can change app state.
+- For automation, list matches first and use `-TargetIndex` only with `-NoWindowConfirmation` when the selected tab is intentionally trusted.
+
+Foreground verification fails:
+
+- Bring the target app to the foreground and retry.
+- Avoid mixing elevated and non-elevated terminals/apps when possible; Windows focus and UI Automation access can differ across integrity levels.
+- If the app opens a modal, menu, or permission prompt during capture, close it and retry with the desired final state visible.
+
+Captured text is missing expected content:
+
+- UI Automation output is partial by design.
+- Editable controls, password fields, off-screen controls, generic `Pane` text, and aggregate `TextPattern` document text are intentionally skipped.
+- If hidden or scrolled content matters, capture another appshot with that content visible or provide a direct file/export.
+
 ## Repository Layout
 
 ```text
@@ -181,6 +280,8 @@ Start a hotkey listener that always targets a query:
 skills/windows-appshot/SKILL.md    # Codex skill entrypoint
 scripts/New-Appshot.ps1            # Capture helper used by the skill
 scripts/Start-AppshotHotkey.ps1    # Optional hotkey listener
+scripts/Install-WindowsAppshotPlugin.ps1 # Personal plugin install/update helper
+scripts/Test-WindowsAppshotPlugin.ps1    # Repo-local validation entrypoint
 ```
 
 ## Privacy Notes
@@ -191,22 +292,25 @@ Generated captures are ignored by git through `.gitignore`.
 
 ## Validation
 
-Validate the plugin manifest:
+Run repo validation:
+
+```powershell
+.\scripts\Test-WindowsAppshotPlugin.ps1 -IncludeHotkeyValidation
+```
+
+When working inside Codex with the local system validator skills available, you can also run:
 
 ```powershell
 python "$HOME\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py" .
-```
-
-Validate the skill:
-
-```powershell
 python "$HOME\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .\skills\windows-appshot
 ```
 
-Parse-check the scripts:
+The GitHub Actions workflow runs the repo-local validation script on Windows for pushes, pull requests, and manual dispatch.
+
+Parse-check the PowerShell scripts directly:
 
 ```powershell
-powershell -NoProfile -Command '$null = [scriptblock]::Create((Get-Content -Raw .\scripts\New-Appshot.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Start-AppshotHotkey.ps1)); "scripts parsed"'
+powershell -NoProfile -Command '$null = [scriptblock]::Create((Get-Content -Raw .\scripts\New-Appshot.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Start-AppshotHotkey.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Install-WindowsAppshotPlugin.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Test-WindowsAppshotPlugin.ps1)); "scripts parsed"'
 ```
 
 Validate hotkey registration:
@@ -217,7 +321,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-AppshotHotke
 
 ## Version
 
-Current release: `v0.2.1`
+Current release: `v0.3.0`
 
 This project uses semantic versioning.
 

@@ -9,6 +9,8 @@ This repository packages the `windows-appshot` Codex plugin.
 - `skills/windows-appshot/SKILL.md` is the Codex skill entrypoint.
 - `scripts/New-Appshot.ps1` captures the foreground Windows window into a local appshot bundle.
 - `scripts/Start-AppshotHotkey.ps1` starts the optional hotkey listener.
+- `scripts/Install-WindowsAppshotPlugin.ps1` installs or updates the plugin checkout and personal marketplace entry.
+- `scripts/Test-WindowsAppshotPlugin.ps1` is the repo-local validation entrypoint used by CI.
 
 ## Safety Rules
 
@@ -17,6 +19,7 @@ This repository packages the `windows-appshot` Codex plugin.
 - Do not commit or push without explicit user approval in the current conversation.
 - Keep the default command target as `NewThread` unless there is a deliberate release decision to change it.
 - Preserve PowerShell single-quote escaping in generated clipboard commands.
+- Keep the install/update script idempotent and non-destructive. It may clone, fast-forward pull, update the marketplace entry, and run `codex plugin add`; it must not delete unrelated user files.
 - Preserve bounded UI Automation traversal and generic Pane/editable/password/off-screen filtering.
 - Do not reintroduce aggregate UI Automation `TextPattern` extraction without a privacy review.
 - Do not make query-based capture silently accept ambiguous matches. Browser tab activation must remain confirmation-first unless `-NoWindowConfirmation` is explicitly supplied for tests or trusted automation.
@@ -40,9 +43,10 @@ All reviewers must return `PASS` before proceeding. Any `BLOCK` requires fixes a
 Before release, run:
 
 ```powershell
+.\scripts\Test-WindowsAppshotPlugin.ps1 -IncludeHotkeyValidation
 python "$HOME\.codex\skills\.system\plugin-creator\scripts\validate_plugin.py" .
 python "$HOME\.codex\skills\.system\skill-creator\scripts\quick_validate.py" .\skills\windows-appshot
-powershell -NoProfile -Command '$null = [scriptblock]::Create((Get-Content -Raw .\scripts\New-Appshot.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Start-AppshotHotkey.ps1)); "scripts parsed"'
+powershell -NoProfile -Command '$null = [scriptblock]::Create((Get-Content -Raw .\scripts\New-Appshot.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Start-AppshotHotkey.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Install-WindowsAppshotPlugin.ps1)); $null = [scriptblock]::Create((Get-Content -Raw .\scripts\Test-WindowsAppshotPlugin.ps1)); "scripts parsed"'
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-AppshotHotkey.ps1 -Hotkey "Ctrl+Shift+F12" -ValidateOnly
 ```
 
