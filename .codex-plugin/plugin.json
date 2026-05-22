@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "Windows Appshot",
     "shortDescription": "Capture Windows app context for Codex CLI.",
-    "longDescription": "Windows Appshot provides PowerShell helpers and a Codex skill for capturing the foreground Windows window as a screenshot plus available UI Automation text, then handing that bundle to Codex through supported CLI image and file inputs.",
+    "longDescription": "Windows Appshot is a Codex plugin for Windows users who want to bring app context into Codex CLI. Invoke $windows-appshot to capture a foreground app, specific window, or browser tab as a local screenshot plus available UI Automation text bundle.",
     "developerName": "Joey Bartlett",
     "category": "Productivity",
     "capabilities": [
@@ -29,7 +29,7 @@
     ],
     "defaultPrompt": [
       "Create a Windows appshot.",
-      "Use my latest appshot as context.",
+      "Capture Edge Gmail tab with Windows Appshot.",
       "Start the appshot hotkey listener."
     ]
   }

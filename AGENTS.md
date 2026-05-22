@@ -5,6 +5,7 @@ This repository packages the `windows-appshot` Codex plugin.
 ## Project Shape
 
 - `.codex-plugin/plugin.json` is the release manifest. Keep its `version` field semantic.
+- `README.md` is user-facing plugin documentation. Keep `$windows-appshot` commands before direct PowerShell script references unless the section is explicitly for development, validation, or advanced script usage.
 - `skills/windows-appshot/SKILL.md` is the Codex skill entrypoint.
 - `scripts/New-Appshot.ps1` captures the foreground Windows window into a local appshot bundle.
 - `scripts/Start-AppshotHotkey.ps1` starts the optional hotkey listener.

@@ -2,133 +2,20 @@
 
 Windows Appshot is a local Codex plugin for capturing foreground Windows app context for Codex CLI.
 
-It creates a local bundle with:
+Once installed, the normal workflow is:
 
-- `window.png` - foreground-window screenshot
-- `window-text.txt` - conservative UI Automation control names plus non-editable values
-- `metadata.json` - source app, title, process, bounds, capture time, and file paths
-- `prompt.md` - Codex handling notes for the captured context
+```text
+$windows-appshot create a Windows appshot
+$windows-appshot capture Edge Gmail tab
+```
 
-This is not native Codex Appshots integration. It cannot inject a new appshot into an already-running Windows Codex app or TUI composer. It creates a local bundle and a supported `codex -i` / `codex --image` command.
+This is not native Codex Appshots integration. It cannot inject a new appshot into an already-running Windows Codex app or TUI composer. It creates a local appshot bundle and a supported `codex -i` / `codex --image` command.
 
 ## Requirements
 
 - Windows
 - PowerShell
 - Codex CLI
-
-## Quick Start
-
-Run from this repo:
-
-```powershell
-.\scripts\New-Appshot.ps1
-```
-
-Focus the app window you want captured during the short delay. The script writes an `appshots/` bundle under the current directory and copies a Codex command to your clipboard.
-
-By default the copied command starts a new interactive Codex CLI session:
-
-```powershell
-codex -i '...\window.png' 'Use this Windows appshot bundle...'
-```
-
-## Capture A Specific Window Or Tab
-
-Pass a query to search visible top-level windows by process, title, and class name. Browser tab names from Edge, Chrome, Firefox, and Brave are also inspected through UI Automation when available.
-
-```powershell
-.\scripts\New-Appshot.ps1 Edge Gmail
-.\scripts\New-Appshot.ps1 "Roblox Studio"
-.\scripts\New-Appshot.ps1 -WindowQuery "Slack OpenAI"
-```
-
-The script prints matched targets before capture. It asks for confirmation when there are multiple matches, when the best match is a browser tab, or when confidence is low. Browser tab capture may activate the matched tab, so tab matches are never silently activated unless you explicitly pass `-NoWindowConfirmation`.
-
-Before taking the screenshot, query mode verifies that the selected window is foreground. Browser tab captures also verify the selected tab through UI Automation when available or through a stronger active-title match.
-
-For inspection without capture:
-
-```powershell
-.\scripts\New-Appshot.ps1 -ListWindows
-.\scripts\New-Appshot.ps1 Edge Gmail -ListWindows
-```
-
-Listing matches prints visible window titles and available browser tab names to the terminal.
-
-For non-interactive tests or trusted automation, first list matches and then select an index:
-
-```powershell
-.\scripts\New-Appshot.ps1 "Appshot Test Window" -ListWindows
-.\scripts\New-Appshot.ps1 "Appshot Test Window" -TargetIndex 1 -NoClipboard
-```
-
-For browser tab targets, `-TargetIndex` still requires explicit trusted automation:
-
-```powershell
-.\scripts\New-Appshot.ps1 Edge Gmail -ListWindows
-.\scripts\New-Appshot.ps1 Edge Gmail -TargetIndex 1 -NoWindowConfirmation
-```
-
-Use `-NoWindowConfirmation` only when the selected target is intentionally trusted.
-
-## Command Targets
-
-`NewThread` is the default because it is the safest target for captured app context.
-
-```powershell
-.\scripts\New-Appshot.ps1 -CommandTarget NewThread
-.\scripts\New-Appshot.ps1 -CommandTarget Exec
-.\scripts\New-Appshot.ps1 -CommandTarget ResumeLastExec
-.\scripts\New-Appshot.ps1 -CommandTarget None
-```
-
-- `NewThread` starts a new interactive Codex CLI session with the screenshot attached.
-- `Exec` starts a new non-interactive Codex run.
-- `ResumeLastExec` continues the latest Codex exec session non-interactively. Use it only when you know the latest exec session is the right destination.
-- `None` captures only and does not prepare a clipboard command.
-
-## Hotkey Mode
-
-Start the listener:
-
-```powershell
-.\scripts\Start-AppshotHotkey.ps1
-```
-
-Default hotkey: `Ctrl+Alt+Space`
-
-Press `Ctrl+C` in the listener terminal to stop it.
-
-Choose another hotkey:
-
-```powershell
-.\scripts\Start-AppshotHotkey.ps1 -Hotkey "Ctrl+Shift+F12"
-```
-
-Start a hotkey listener that always targets a query:
-
-```powershell
-.\scripts\Start-AppshotHotkey.ps1 -WindowQuery "Edge Gmail"
-```
-
-## Codex Plugin Layout
-
-This repository is the plugin root:
-
-```text
-.codex-plugin/plugin.json
-skills/windows-appshot/SKILL.md
-scripts/New-Appshot.ps1
-scripts/Start-AppshotHotkey.ps1
-```
-
-After installing as a Codex plugin and starting a new Codex session, invoke:
-
-```text
-$windows-appshot create a Windows appshot
-$windows-appshot capture Edge Gmail tab
-```
 
 ## Install As A Personal Plugin
 
@@ -170,6 +57,131 @@ codex plugin add windows-appshot@personal
 ```
 
 Restart Codex sessions after installation so the skill is loaded.
+
+## Use From Codex
+
+After installing as a Codex plugin and starting a new Codex session, invoke:
+
+```text
+$windows-appshot create a Windows appshot
+```
+
+Focus the app window you want captured during the short delay. The plugin creates an `appshots/` bundle and prepares a supported Codex CLI image command for that bundle.
+
+You can also ask for a specific visible window or browser tab:
+
+```text
+$windows-appshot capture Edge Gmail tab
+$windows-appshot capture Roblox Studio
+$windows-appshot capture Slack OpenAI
+```
+
+Target queries search visible top-level windows by process, title, and class name. Browser tab names from Edge, Chrome, Firefox, and Brave are also inspected through UI Automation when available.
+
+The plugin asks for confirmation when there are multiple matches, when the best match is a browser tab, or when confidence is low. Browser tab capture may activate the matched tab, so tab matches are never silently activated without explicit trusted automation in the underlying script.
+
+Before taking the screenshot, query mode verifies that the selected window is foreground. Browser tab captures also verify the selected tab through UI Automation when available or through a stronger active-title match.
+
+## What Gets Captured
+
+Each appshot bundle contains:
+
+- `window.png` - screenshot of the selected Windows app window
+- `window-text.txt` - conservative UI Automation control names plus non-editable values
+- `metadata.json` - source app, title, process, bounds, capture time, file paths, and selection details
+- `prompt.md` - Codex handling notes for the captured context
+
+The default handoff prepares and copies a Codex CLI command that starts a new thread with the screenshot attached when you run it. It does not write into private Codex session storage.
+
+## Direct PowerShell Reference
+
+The plugin commands above are the normal user workflow. Under the hood, the plugin runs `scripts/New-Appshot.ps1`. You can run the script directly for debugging, automation, hotkey setup, or validation.
+
+Manual foreground capture:
+
+```powershell
+.\scripts\New-Appshot.ps1
+```
+
+Direct query capture:
+
+```powershell
+.\scripts\New-Appshot.ps1 Edge Gmail
+.\scripts\New-Appshot.ps1 "Roblox Studio"
+.\scripts\New-Appshot.ps1 -WindowQuery "Slack OpenAI"
+```
+
+List matches without capture:
+
+```powershell
+.\scripts\New-Appshot.ps1 -ListWindows
+.\scripts\New-Appshot.ps1 Edge Gmail -ListWindows
+```
+
+For non-interactive tests or trusted automation, first list matches and then select an index:
+
+```powershell
+.\scripts\New-Appshot.ps1 "Appshot Test Window" -ListWindows
+.\scripts\New-Appshot.ps1 "Appshot Test Window" -TargetIndex 1 -NoClipboard
+```
+
+For browser tab targets, `-TargetIndex` still requires explicit trusted automation:
+
+```powershell
+.\scripts\New-Appshot.ps1 Edge Gmail -ListWindows
+.\scripts\New-Appshot.ps1 Edge Gmail -TargetIndex 1 -NoWindowConfirmation
+```
+
+Use `-NoWindowConfirmation` only when the selected target is intentionally trusted.
+
+### Command Targets
+
+`NewThread` is the default because it is the safest target for captured app context.
+
+```powershell
+.\scripts\New-Appshot.ps1 -CommandTarget NewThread
+.\scripts\New-Appshot.ps1 -CommandTarget Exec
+.\scripts\New-Appshot.ps1 -CommandTarget ResumeLastExec
+.\scripts\New-Appshot.ps1 -CommandTarget None
+```
+
+- `NewThread` prepares a command that starts a new interactive Codex CLI session with the screenshot attached.
+- `Exec` prepares a command that starts a new non-interactive Codex run.
+- `ResumeLastExec` prepares a command that continues the latest Codex exec session non-interactively. Use it only when you know the latest exec session is the right destination.
+- `None` captures only and does not prepare a clipboard command.
+
+### Hotkey Mode
+
+Start the listener:
+
+```powershell
+.\scripts\Start-AppshotHotkey.ps1
+```
+
+Default hotkey: `Ctrl+Alt+Space`
+
+Press `Ctrl+C` in the listener terminal to stop it.
+
+Choose another hotkey:
+
+```powershell
+.\scripts\Start-AppshotHotkey.ps1 -Hotkey "Ctrl+Shift+F12"
+```
+
+Start a hotkey listener that always targets a query:
+
+```powershell
+.\scripts\Start-AppshotHotkey.ps1 -WindowQuery "Edge Gmail"
+```
+
+## Repository Layout
+
+```text
+.codex-plugin/plugin.json          # Codex plugin manifest
+skills/windows-appshot/SKILL.md    # Codex skill entrypoint
+scripts/New-Appshot.ps1            # Capture helper used by the skill
+scripts/Start-AppshotHotkey.ps1    # Optional hotkey listener
+```
 
 ## Privacy Notes
 

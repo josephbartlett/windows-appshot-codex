@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Rework user-facing documentation and plugin metadata to lead with `$windows-appshot` plugin commands before direct PowerShell script usage.
+
 ## v0.2.0 - 2026-05-22
 
 - Add query-based window and browser tab target selection.
